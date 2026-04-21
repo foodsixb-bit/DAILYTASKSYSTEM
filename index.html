@@ -1,0 +1,1938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SixB Food Industries - Task Management</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #0891b2;
+            --primary-dark: #0e7490;
+            --primary-light: #06b6d4;
+            --secondary: #6366f1;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1e293b;
+            --gray: #64748b;
+            --light: #f1f5f9;
+            --white: #ffffff;
+        }
+        
+        body {
+            font-family: 'Work Sans', sans-serif;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            min-height: 100vh;
+        }
+        
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        .btn {
+            @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 cursor-pointer;
+        }
+        
+        .btn-primary {
+            @apply bg-cyan-600 text-white hover:bg-cyan-700 active:scale-95;
+        }
+        
+        .btn-secondary {
+            @apply bg-gray-200 text-gray-700 hover:bg-gray-300 active:scale-95;
+        }
+        
+        .btn-danger {
+            @apply bg-red-500 text-white hover:bg-red-600 active:scale-95;
+        }
+        
+        .card {
+            @apply bg-white rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl;
+        }
+        
+        .input-field {
+            @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none transition-all;
+        }
+        
+        .badge {
+            @apply px-3 py-1 rounded-full text-xs font-semibold;
+        }
+        
+        .badge-pending {
+            @apply bg-yellow-100 text-yellow-800;
+        }
+        
+        .badge-in_progress {
+            @apply bg-blue-100 text-blue-800;
+        }
+        
+        .badge-completed {
+            @apply bg-green-100 text-green-800;
+        }
+        
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            animation: slideIn 0.3s ease-out;
+            z-index: 9999;
+        }
+        
+        .toast-success {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+        
+        .toast-error {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+        
+        .toast-info {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .sidebar {
+            @apply fixed left-0 top-0 h-full bg-gradient-to-b from-slate-900 to-slate-800 text-white w-64 shadow-2xl z-50;
+        }
+        
+        .sidebar-item {
+            @apply px-6 py-3 flex items-center gap-3 cursor-pointer transition-all duration-200 hover:bg-white/10 border-l-4 border-transparent;
+        }
+        
+        .sidebar-item.active {
+            @apply bg-cyan-600/20 border-cyan-500;
+        }
+        
+        .modal {
+            @apply fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] backdrop-blur-sm;
+            animation: fadeIn 0.2s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .modal-content {
+            @apply bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto;
+            animation: scaleIn 0.3s ease-out;
+        }
+        
+        @keyframes scaleIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        
+        .kanban-column {
+            @apply bg-gray-50 rounded-xl p-4 min-w-[300px];
+        }
+        
+        .kanban-card {
+            @apply bg-white rounded-lg p-4 mb-3 shadow hover:shadow-lg transition-all cursor-move;
+        }
+        
+        .chat-message {
+            @apply max-w-[70%] rounded-2xl p-3 mb-3 break-words;
+        }
+        
+        .chat-message.sent {
+            @apply ml-auto bg-cyan-600 text-white rounded-br-none;
+        }
+        
+        .chat-message.received {
+            @apply mr-auto bg-gray-200 text-gray-800 rounded-bl-none;
+        }
+
+        .stat-card {
+            @apply bg-gradient-to-br p-6 rounded-xl text-white shadow-lg;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+            
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0 !important;
+            }
+        }
+
+        .priority-high {
+            @apply border-l-4 border-red-500;
+        }
+
+        .priority-medium {
+            @apply border-l-4 border-yellow-500;
+        }
+
+        .priority-low {
+            @apply border-l-4 border-green-500;
+        }
+    </style>
+</head>
+<body>
+    <!-- App Container -->
+    <div id="app"></div>
+
+    <script>
+        // ================================================
+        // SUPABASE CONFIGURATION
+        // ================================================
+        const SUPABASE_URL = "https://qktewwrdvfurheauwzdv.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFrdGV3d3JkdmZ1cmhlYXV3emR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2OTMzODgsImV4cCI6MjA5MjI2OTM4OH0.ENirr16x_ii3lXgv5z4lsnxZsvWFzbeEef832IZ4rKg";
+        
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // ================================================
+        // GLOBAL STATE
+        // ================================================
+        const state = {
+            user: null,
+            profile: null,
+            currentView: 'dashboard',
+            tasks: [],
+            employees: [],
+            messages: [],
+            selectedEmployee: null,
+            selectedTask: null,
+            realtimeChannels: []
+        };
+        
+        // ================================================
+        // UTILITY FUNCTIONS
+        // ================================================
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'times-circle' : 'info-circle'} mr-2"></i>${message}`;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'slideIn 0.3s ease-out reverse';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
+        function showLoader() {
+            const loader = document.createElement('div');
+            loader.id = 'global-loader';
+            loader.className = 'fixed inset-0 bg-black/20 flex items-center justify-center z-[99999] backdrop-blur-sm';
+            loader.innerHTML = '<div class="loader"></div>';
+            document.body.appendChild(loader);
+        }
+        
+        function hideLoader() {
+            const loader = document.getElementById('global-loader');
+            if (loader) loader.remove();
+        }
+        
+        function formatDate(date) {
+            if (!date) return '';
+            return new Date(date).toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+        }
+        
+        function formatDateTime(date) {
+            if (!date) return '';
+            return new Date(date).toLocaleString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+        
+        // ================================================
+        // AUTHENTICATION
+        // ================================================
+        async function checkAuth() {
+            const { data: { session } } = await supabaseClient.auth.getSession()
+            
+            if (session) {
+                state.user = session.user;
+                await loadProfile();
+                if (state.profile) {
+                    renderApp();
+                } else {
+                    renderAuth();
+                }
+            } else {
+                renderAuth();
+            }
+        }
+        
+        async function loadProfile() {
+            const { data, error } = await supabaseClient
+                .from('profiles')
+                .select('*')
+                .eq('id', state.user.id)
+                .single();
+            
+            if (data) {
+                state.profile = data;
+            }
+        }
+        
+        async function signup(name, email, password, role) {
+            try {
+                showLoader();
+                
+                const { data: authData, error: authError } = await supabaseClient.auth.signUp({
+                    email,
+                    password
+                });
+                
+                if (authError) throw authError;
+                
+                if (authData.user) {
+                    const { error: profileError } = await supabaseClient
+                        .from('profiles')
+                        .insert([{
+                            id: authData.user.id,
+                            name,
+                            email,
+                            role
+                        }]);
+                    
+                    if (profileError) throw profileError;
+                    
+                    showToast('Account created successfully! Please log in.', 'success');
+                    setTimeout(() => window.location.reload(), 1500);
+                }
+            } catch (error) {
+                showToast(error.message, 'error');
+            } finally {
+                hideLoader();
+            }
+        }
+        
+        async function login(email, password) {
+            try {
+                showLoader();
+                
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                    email,
+                    password
+                });
+                
+                if (error) throw error;
+                
+                state.user = data.user;
+                await loadProfile();
+                
+                showToast(`Welcome back, ${state.profile.name}!`, 'success');
+                renderApp();
+            } catch (error) {
+                showToast(error.message, 'error');
+            } finally {
+                hideLoader();
+            }
+        }
+        
+        async function logout() {
+            await supabaseClient.auth.signOut();
+            
+            // Cleanup realtime subscriptions
+            state.realtimeChannels.forEach(channel => {
+                supabaseClient.removeChannel(channel);
+            });
+            
+            state.user = null;
+            state.profile = null;
+            state.tasks = [];
+            state.employees = [];
+            state.messages = [];
+            
+            showToast('Logged out successfully', 'info');
+            renderAuth();
+        }
+        
+        // ================================================
+        // TASK MANAGEMENT
+        // ================================================
+        async function loadTasks() {
+            try {
+                let query = supabaseClient
+                    .from('tasks')
+                    .select(`
+                        *,
+                        assigned_to_profile:profiles!tasks_assigned_to_fkey(name, email),
+                        assigned_by_profile:profiles!tasks_assigned_by_fkey(name, email)
+                    `)
+                    .order('created_at', { ascending: false });
+                
+                if (state.profile.role === 'employee') {
+                    query = query.eq('assigned_to', state.user.id);
+                }
+                
+                const { data, error } = await query;
+                
+                if (error) throw error;
+                
+                state.tasks = data || [];
+            } catch (error) {
+                console.error('Error loading tasks:', error);
+                showToast('Failed to load tasks', 'error');
+            }
+        }
+        
+        async function createTask(taskData) {
+            try {
+                showLoader();
+                
+                const { data, error } = await supabaseClient
+                    .from('tasks')
+                    .insert([{
+                        ...taskData,
+                        assigned_by: state.user.id
+                    }])
+                    .select()
+                    .single();
+                
+                if (error) throw error;
+                
+                showToast('Task created successfully', 'success');
+                await loadTasks();
+                renderApp();
+            } catch (error) {
+                showToast(error.message, 'error');
+            } finally {
+                hideLoader();
+            }
+        }
+        
+        async function updateTask(taskId, updates) {
+            try {
+                showLoader();
+                
+                const { error } = await supabase
+                    .from('tasks')
+                    .update(updates)
+                    .eq('id', taskId);
+                
+                if (error) throw error;
+                
+                showToast('Task updated successfully', 'success');
+                await loadTasks();
+                renderApp();
+            } catch (error) {
+                showToast(error.message, 'error');
+            } finally {
+                hideLoader();
+            }
+        }
+        
+        async function deleteTask(taskId) {
+            if (!confirm('Are you sure you want to delete this task?')) return;
+            
+            try {
+                showLoader();
+                
+                const { error } = await supabase
+                    .from('tasks')
+                    .delete()
+                    .eq('id', taskId);
+                
+                if (error) throw error;
+                
+                showToast('Task deleted successfully', 'success');
+                await loadTasks();
+                renderApp();
+            } catch (error) {
+                showToast(error.message, 'error');
+            } finally {
+                hideLoader();
+            }
+        }
+        
+        // ================================================
+        // EMPLOYEE MANAGEMENT
+        // ================================================
+        async function loadEmployees() {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('profiles')
+                    .select('*')
+                    .eq('role', 'employee')
+                    .order('name');
+                
+                if (error) throw error;
+                
+                state.employees = data || [];
+            } catch (error) {
+                console.error('Error loading employees:', error);
+            }
+        }
+        
+        // ================================================
+        // CHAT MANAGEMENT
+        // ================================================
+        async function loadMessages(otherUserId) {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('messages')
+                    .select(`
+                        *,
+                        sender:profiles!messages_sender_id_fkey(name, email),
+                        receiver:profiles!messages_receiver_id_fkey(name, email)
+                    `)
+                    .or(`and(sender_id.eq.${state.user.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${state.user.id})`)
+                    .order('created_at', { ascending: true });
+                
+                if (error) throw error;
+                
+                state.messages = data || [];
+                
+                // Mark messages as read
+                await supabase
+                    .from('messages')
+                    .update({ is_read: true })
+                    .eq('receiver_id', state.user.id)
+                    .eq('sender_id', otherUserId);
+                    
+            } catch (error) {
+                console.error('Error loading messages:', error);
+            }
+        }
+        
+        async function sendMessage(receiverId, message) {
+            try {
+                const { error } = await supabase
+                    .from('messages')
+                    .insert([{
+                        sender_id: state.user.id,
+                        receiver_id: receiverId,
+                        message: message.trim()
+                    }]);
+                
+                if (error) throw error;
+                
+                await loadMessages(receiverId);
+                renderApp();
+            } catch (error) {
+                showToast('Failed to send message', 'error');
+            }
+        }
+        
+        // ================================================
+        // FILE UPLOAD
+        // ================================================
+        async function uploadFile(file, taskId) {
+            try {
+                showLoader();
+                
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${Math.random()}.${fileExt}`;
+                const filePath = `${taskId}/${fileName}`;
+                
+                const { data: uploadData, error: uploadError } = await supabaseClient.storage
+                    .from('task-attachments')
+                    .upload(filePath, file);
+                
+                if (uploadError) throw uploadError;
+                
+                const { data: { publicUrl } } = supabaseClient.storage
+                    .from('task-attachments')
+                    .getPublicUrl(filePath);
+                
+                const { error: dbError } = await supabaseClient
+                    .from('attachments')
+                    .insert([{
+                        task_id: taskId,
+                        file_name: file.name,
+                        file_url: publicUrl,
+                        file_type: file.type,
+                        uploaded_by: state.user.id
+                    }]);
+                
+                if (dbError) throw dbError;
+                
+                showToast('File uploaded successfully', 'success');
+                return publicUrl;
+            } catch (error) {
+                showToast('Failed to upload file: ' + error.message, 'error');
+                return null;
+            } finally {
+                hideLoader();
+            }
+        }
+        
+        // ================================================
+        // REALTIME SUBSCRIPTIONS
+        // ================================================
+        function setupRealtimeSubscriptions() {
+            // Tasks subscription
+            const tasksChannel = supabaseClient
+                .channel('tasks-changes')
+                .on('postgres_changes', 
+                    { event: '*', schema: 'public', table: 'tasks' },
+                    async (payload) => {
+                        console.log('Task change:', payload);
+                        await loadTasks();
+                        renderApp();
+                    }
+                )
+                .subscribe();
+            
+            state.realtimeChannels.push(tasksChannel);
+            
+            // Messages subscription
+            const messagesChannel = supabaseClient
+                .channel('messages-changes')
+                .on('postgres_changes',
+                    { event: 'INSERT', schema: 'public', table: 'messages' },
+                    async (payload) => {
+                        if (payload.new.receiver_id === state.user.id || 
+                            payload.new.sender_id === state.user.id) {
+                            if (state.selectedEmployee) {
+                                await loadMessages(state.selectedEmployee.id);
+                                renderApp();
+                            }
+                            showToast('New message received', 'info');
+                        }
+                    }
+                )
+                .subscribe();
+            
+            state.realtimeChannels.push(messagesChannel);
+        }
+        
+        // ================================================
+        // STATISTICS & REPORTS
+        // ================================================
+        function getTaskStats() {
+            const total = state.tasks.length;
+            const pending = state.tasks.filter(t => t.status === 'pending').length;
+            const inProgress = state.tasks.filter(t => t.status === 'in_progress').length;
+            const completed = state.tasks.filter(t => t.status === 'completed').length;
+            
+            return { total, pending, inProgress, completed };
+        }
+        
+        function getWeeklyStats() {
+            const oneWeekAgo = new Date();
+            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+            
+            return state.tasks.filter(t => new Date(t.created_at) >= oneWeekAgo);
+        }
+        
+        function getMonthlyStats() {
+            const oneMonthAgo = new Date();
+            oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+            
+            return state.tasks.filter(t => new Date(t.created_at) >= oneMonthAgo);
+        }
+        
+        // ================================================
+        // RENDERING FUNCTIONS
+        // ================================================
+        function renderAuth() {
+            const app = document.getElementById('app');
+            app.innerHTML = `
+                <div class="min-h-screen flex items-center justify-center p-4" style="background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);">
+                    <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+                        <div class="text-center mb-8">
+                            <div class="w-20 h-20 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                                <i class="fas fa-tasks text-white text-3xl"></i>
+                            </div>
+                            <h1 class="text-3xl font-bold text-gray-800 mb-2">SixB Food Industries</h1>
+                            <p class="text-gray-600">Task Management System</p>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <div class="flex gap-2 bg-gray-100 rounded-lg p-1">
+                                <button onclick="showLoginForm()" id="login-tab" class="flex-1 py-2 rounded-md font-medium transition-all bg-white shadow text-cyan-600">Login</button>
+                                <button onclick="showSignupForm()" id="signup-tab" class="flex-1 py-2 rounded-md font-medium transition-all text-gray-600">Sign Up</button>
+                            </div>
+                        </div>
+                        
+                        <div id="auth-form-container"></div>
+                    </div>
+                </div>
+            `;
+            
+            showLoginForm();
+        }
+        
+        function showLoginForm() {
+            document.getElementById('login-tab').className = 'flex-1 py-2 rounded-md font-medium transition-all bg-white shadow text-cyan-600';
+            document.getElementById('signup-tab').className = 'flex-1 py-2 rounded-md font-medium transition-all text-gray-600';
+            
+            document.getElementById('auth-form-container').innerHTML = `
+                <form onsubmit="handleLogin(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                        <input type="email" id="login-email" required class="input-field" placeholder="your.email@sixbfood.com">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                        <input type="password" id="login-password" required class="input-field" placeholder="••••••••">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-full py-3 text-lg">
+                        <i class="fas fa-sign-in-alt mr-2"></i>Login
+                    </button>
+                </form>
+            `;
+        }
+        
+        function showSignupForm() {
+            document.getElementById('login-tab').className = 'flex-1 py-2 rounded-md font-medium transition-all text-gray-600';
+            document.getElementById('signup-tab').className = 'flex-1 py-2 rounded-md font-medium transition-all bg-white shadow text-cyan-600';
+            
+            document.getElementById('auth-form-container').innerHTML = `
+                <form onsubmit="handleSignup(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                        <input type="text" id="signup-name" required class="input-field" placeholder="John Doe">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                        <input type="email" id="signup-email" required class="input-field" placeholder="your.email@sixbfood.com">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                        <input type="password" id="signup-password" required class="input-field" placeholder="••••••••" minlength="6">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                        <select id="signup-role" required class="input-field">
+                            <option value="employee">Employee</option>
+                            <option value="manager">Manager</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-full py-3 text-lg">
+                        <i class="fas fa-user-plus mr-2"></i>Create Account
+                    </button>
+                </form>
+            `;
+        }
+        
+        function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            login(email, password);
+        }
+        
+        function handleSignup(e) {
+            e.preventDefault();
+            const name = document.getElementById('signup-name').value;
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            const role = document.getElementById('signup-role').value;
+            signup(name, email, password, role);
+        }
+        
+        async function renderApp() {
+            await loadTasks();
+            
+            if (state.profile.role === 'manager') {
+                await loadEmployees();
+            }
+            
+            const app = document.getElementById('app');
+            
+            app.innerHTML = `
+                <!-- Mobile Menu Button -->
+                <button onclick="toggleMobileSidebar()" class="md:hidden fixed top-4 left-4 z-[60] bg-cyan-600 text-white p-3 rounded-lg shadow-lg">
+                    <i class="fas fa-bars"></i>
+                </button>
+                
+                <!-- Sidebar -->
+                <div id="sidebar" class="sidebar">
+                    <div class="p-6 border-b border-white/10">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-12 h-12 bg-cyan-500 rounded-xl flex items-center justify-center">
+                                <i class="fas fa-user text-white text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold">${state.profile.name}</h3>
+                                <p class="text-xs text-gray-400 capitalize">${state.profile.role}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="py-4">
+                        <div onclick="changeView('dashboard')" class="sidebar-item ${state.currentView === 'dashboard' ? 'active' : ''}">
+                            <i class="fas fa-home"></i>
+                            <span>Dashboard</span>
+                        </div>
+                        <div onclick="changeView('tasks')" class="sidebar-item ${state.currentView === 'tasks' ? 'active' : ''}">
+                            <i class="fas fa-tasks"></i>
+                            <span>Tasks</span>
+                        </div>
+                        <div onclick="changeView('kanban')" class="sidebar-item ${state.currentView === 'kanban' ? 'active' : ''}">
+                            <i class="fas fa-columns"></i>
+                            <span>Kanban Board</span>
+                        </div>
+                        ${state.profile.role === 'manager' ? `
+                        <div onclick="changeView('employees')" class="sidebar-item ${state.currentView === 'employees' ? 'active' : ''}">
+                            <i class="fas fa-users"></i>
+                            <span>Employees</span>
+                        </div>
+                        ` : ''}
+                        <div onclick="changeView('chat')" class="sidebar-item ${state.currentView === 'chat' ? 'active' : ''}">
+                            <i class="fas fa-comments"></i>
+                            <span>Messages</span>
+                        </div>
+                        <div onclick="changeView('reports')" class="sidebar-item ${state.currentView === 'reports' ? 'active' : ''}">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>Reports</span>
+                        </div>
+                    </div>
+                    
+                    <div class="absolute bottom-0 left-0 right-0 p-6 border-t border-white/10">
+                        <button onclick="logout()" class="w-full btn bg-red-500 hover:bg-red-600 text-white">
+                            <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Main Content -->
+                <div class="main-content ml-64 p-8">
+                    <div id="content-area"></div>
+                </div>
+            `;
+            
+            renderContent();
+            
+            // Setup realtime if not already done
+            if (state.realtimeChannels.length === 0) {
+                setupRealtimeSubscriptions();
+            }
+        }
+        
+        function toggleMobileSidebar() {
+            document.getElementById('sidebar').classList.toggle('mobile-open');
+        }
+        
+        function changeView(view) {
+            state.currentView = view;
+            renderContent();
+        }
+        
+        function renderContent() {
+            const content = document.getElementById('content-area');
+            
+            switch(state.currentView) {
+                case 'dashboard':
+                    renderDashboard(content);
+                    break;
+                case 'tasks':
+                    renderTasks(content);
+                    break;
+                case 'kanban':
+                    renderKanban(content);
+                    break;
+                case 'employees':
+                    renderEmployees(content);
+                    break;
+                case 'chat':
+                    renderChat(content);
+                    break;
+                case 'reports':
+                    renderReports(content);
+                    break;
+            }
+        }
+        
+        function renderDashboard(content) {
+            const stats = getTaskStats();
+            const weeklyTasks = getWeeklyStats();
+            const monthlyTasks = getMonthlyStats();
+            
+            const todayTasks = state.tasks.filter(t => {
+                if (!t.due_date) return false;
+                const today = new Date().toDateString();
+                return new Date(t.due_date).toDateString() === today;
+            });
+            
+            content.innerHTML = `
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800 mb-6">
+                        Welcome back, ${state.profile.name}! 👋
+                    </h1>
+                    
+                    <!-- Stats Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                        <div class="stat-card from-cyan-500 to-blue-600">
+                            <div class="flex items-center justify-between mb-2">
+                                <h3 class="text-white/80 text-sm font-medium">Total Tasks</h3>
+                                <i class="fas fa-tasks text-white/50 text-2xl"></i>
+                            </div>
+                            <p class="text-4xl font-bold">${stats.total}</p>
+                        </div>
+                        
+                        <div class="stat-card from-yellow-500 to-orange-600">
+                            <div class="flex items-center justify-between mb-2">
+                                <h3 class="text-white/80 text-sm font-medium">Pending</h3>
+                                <i class="fas fa-clock text-white/50 text-2xl"></i>
+                            </div>
+                            <p class="text-4xl font-bold">${stats.pending}</p>
+                        </div>
+                        
+                        <div class="stat-card from-blue-500 to-indigo-600">
+                            <div class="flex items-center justify-between mb-2">
+                                <h3 class="text-white/80 text-sm font-medium">In Progress</h3>
+                                <i class="fas fa-spinner text-white/50 text-2xl"></i>
+                            </div>
+                            <p class="text-4xl font-bold">${stats.inProgress}</p>
+                        </div>
+                        
+                        <div class="stat-card from-green-500 to-emerald-600">
+                            <div class="flex items-center justify-between mb-2">
+                                <h3 class="text-white/80 text-sm font-medium">Completed</h3>
+                                <i class="fas fa-check-circle text-white/50 text-2xl"></i>
+                            </div>
+                            <p class="text-4xl font-bold">${stats.completed}</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Today's Tasks -->
+                    <div class="card mb-8">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-2xl font-bold text-gray-800">
+                                <i class="fas fa-calendar-day text-cyan-600 mr-2"></i>Today's Tasks
+                            </h2>
+                            <button onclick="openCreateTaskModal()" class="btn btn-primary">
+                                <i class="fas fa-plus mr-2"></i>Add Task
+                            </button>
+                        </div>
+                        
+                        ${todayTasks.length === 0 ? `
+                            <div class="text-center py-8 text-gray-500">
+                                <i class="fas fa-check-circle text-6xl mb-4 text-gray-300"></i>
+                                <p>No tasks due today. Great job!</p>
+                            </div>
+                        ` : `
+                            <div class="space-y-3">
+                                ${todayTasks.map(task => `
+                                    <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all priority-${task.priority || 'medium'}">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex-1">
+                                                <h3 class="font-semibold text-gray-800">${task.title}</h3>
+                                                <p class="text-sm text-gray-600 mt-1">${task.description || ''}</p>
+                                            </div>
+                                            <span class="badge badge-${task.status}">${task.status.replace('_', ' ')}</span>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        `}
+                    </div>
+                    
+                    <!-- Recent Activity -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="card">
+                            <h3 class="text-xl font-bold text-gray-800 mb-4">
+                                <i class="fas fa-history text-cyan-600 mr-2"></i>Recent Tasks
+                            </h3>
+                            <div class="space-y-2">
+                                ${state.tasks.slice(0, 5).map(task => `
+                                    <div class="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-all">
+                                        <div class="flex-1">
+                                            <p class="font-medium text-gray-800">${task.title}</p>
+                                            <p class="text-xs text-gray-500">${formatDate(task.created_at)}</p>
+                                        </div>
+                                        <span class="badge badge-${task.status}">${task.status.replace('_', ' ')}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        
+                        <div class="card">
+                            <h3 class="text-xl font-bold text-gray-800 mb-4">
+                                <i class="fas fa-chart-line text-cyan-600 mr-2"></i>This Month
+                            </h3>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-gray-600">Tasks Created</span>
+                                    <span class="font-bold text-2xl text-cyan-600">${monthlyTasks.length}</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-gray-600">Completed</span>
+                                    <span class="font-bold text-2xl text-green-600">${monthlyTasks.filter(t => t.status === 'completed').length}</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-gray-600">Completion Rate</span>
+                                    <span class="font-bold text-2xl text-blue-600">${monthlyTasks.length > 0 ? Math.round((monthlyTasks.filter(t => t.status === 'completed').length / monthlyTasks.length) * 100) : 0}%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function renderTasks(content) {
+            const stats = getTaskStats();
+            
+            content.innerHTML = `
+                <div>
+                    <div class="flex items-center justify-between mb-6">
+                        <h1 class="text-3xl font-bold text-gray-800">
+                            <i class="fas fa-tasks text-cyan-600 mr-2"></i>All Tasks
+                        </h1>
+                        <button onclick="openCreateTaskModal()" class="btn btn-primary">
+                            <i class="fas fa-plus mr-2"></i>Create Task
+                        </button>
+                    </div>
+                    
+                    <!-- Filters -->
+                    <div class="card mb-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <select id="filter-status" onchange="filterTasks()" class="input-field">
+                                <option value="">All Status</option>
+                                <option value="pending">Pending</option>
+                                <option value="in_progress">In Progress</option>
+                                <option value="completed">Completed</option>
+                            </select>
+                            
+                            ${state.profile.role === 'manager' ? `
+                            <select id="filter-employee" onchange="filterTasks()" class="input-field">
+                                <option value="">All Employees</option>
+                                ${state.employees.map(emp => `<option value="${emp.id}">${emp.name}</option>`).join('')}
+                            </select>
+                            ` : ''}
+                            
+                            <select id="filter-priority" onchange="filterTasks()" class="input-field">
+                                <option value="">All Priority</option>
+                                <option value="high">High</option>
+                                <option value="medium">Medium</option>
+                                <option value="low">Low</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Tasks List -->
+                    <div id="tasks-list" class="space-y-4">
+                        ${state.tasks.map(task => `
+                            <div class="card priority-${task.priority || 'medium'}" data-task-id="${task.id}">
+                                <div class="flex items-start justify-between mb-4">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-2 mb-2">
+                                            <h3 class="text-xl font-bold text-gray-800">${task.title}</h3>
+                                            <span class="badge badge-${task.status}">${task.status.replace('_', ' ')}</span>
+                                            ${task.priority ? `<span class="badge bg-${task.priority === 'high' ? 'red' : task.priority === 'medium' ? 'yellow' : 'green'}-100 text-${task.priority === 'high' ? 'red' : task.priority === 'medium' ? 'yellow' : 'green'}-800">${task.priority}</span>` : ''}
+                                        </div>
+                                        <p class="text-gray-600 mb-3">${task.description || 'No description'}</p>
+                                        
+                                        <div class="flex flex-wrap gap-4 text-sm text-gray-500">
+                                            ${task.assigned_to_profile ? `
+                                                <div class="flex items-center gap-2">
+                                                    <i class="fas fa-user"></i>
+                                                    <span>${task.assigned_to_profile.name}</span>
+                                                </div>
+                                            ` : ''}
+                                            ${task.due_date ? `
+                                                <div class="flex items-center gap-2">
+                                                    <i class="fas fa-calendar"></i>
+                                                    <span>${formatDate(task.due_date)}</span>
+                                                </div>
+                                            ` : ''}
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-clock"></i>
+                                                <span>${formatDateTime(task.created_at)}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex gap-2">
+                                        ${state.profile.role === 'employee' && task.assigned_to === state.user.id ? `
+                                            <button onclick="openTaskStatusModal('${task.id}')" class="btn btn-secondary text-sm">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button onclick="openUploadModal('${task.id}')" class="btn btn-secondary text-sm">
+                                                <i class="fas fa-upload"></i>
+                                            </button>
+                                        ` : ''}
+                                        ${state.profile.role === 'manager' ? `
+                                            <button onclick="openEditTaskModal('${task.id}')" class="btn btn-secondary text-sm">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button onclick="deleteTask('${task.id}')" class="btn btn-danger text-sm">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                        
+                        ${state.tasks.length === 0 ? `
+                            <div class="card text-center py-12">
+                                <i class="fas fa-inbox text-6xl text-gray-300 mb-4"></i>
+                                <p class="text-gray-500 text-lg">No tasks found</p>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+        
+        function filterTasks() {
+            const statusFilter = document.getElementById('filter-status').value;
+            const employeeFilter = document.getElementById('filter-employee')?.value;
+            const priorityFilter = document.getElementById('filter-priority').value;
+            
+            const tasks = document.querySelectorAll('[data-task-id]');
+            
+            tasks.forEach(taskEl => {
+                const taskId = taskEl.getAttribute('data-task-id');
+                const task = state.tasks.find(t => t.id === taskId);
+                
+                let show = true;
+                
+                if (statusFilter && task.status !== statusFilter) show = false;
+                if (employeeFilter && task.assigned_to !== employeeFilter) show = false;
+                if (priorityFilter && task.priority !== priorityFilter) show = false;
+                
+                taskEl.style.display = show ? 'block' : 'none';
+            });
+        }
+        
+        function renderKanban(content) {
+            const pendingTasks = state.tasks.filter(t => t.status === 'pending');
+            const inProgressTasks = state.tasks.filter(t => t.status === 'in_progress');
+            const completedTasks = state.tasks.filter(t => t.status === 'completed');
+            
+            content.innerHTML = `
+                <div>
+                    <div class="flex items-center justify-between mb-6">
+                        <h1 class="text-3xl font-bold text-gray-800">
+                            <i class="fas fa-columns text-cyan-600 mr-2"></i>Kanban Board
+                        </h1>
+                        <button onclick="openCreateTaskModal()" class="btn btn-primary">
+                            <i class="fas fa-plus mr-2"></i>Add Task
+                        </button>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Pending Column -->
+                        <div class="kanban-column">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="font-bold text-gray-700 flex items-center gap-2">
+                                    <i class="fas fa-clock text-yellow-500"></i>
+                                    Pending
+                                </h3>
+                                <span class="badge badge-pending">${pendingTasks.length}</span>
+                            </div>
+                            <div class="space-y-3">
+                                ${pendingTasks.map(task => renderKanbanCard(task)).join('')}
+                            </div>
+                        </div>
+                        
+                        <!-- In Progress Column -->
+                        <div class="kanban-column">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="font-bold text-gray-700 flex items-center gap-2">
+                                    <i class="fas fa-spinner text-blue-500"></i>
+                                    In Progress
+                                </h3>
+                                <span class="badge badge-in_progress">${inProgressTasks.length}</span>
+                            </div>
+                            <div class="space-y-3">
+                                ${inProgressTasks.map(task => renderKanbanCard(task)).join('')}
+                            </div>
+                        </div>
+                        
+                        <!-- Completed Column -->
+                        <div class="kanban-column">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="font-bold text-gray-700 flex items-center gap-2">
+                                    <i class="fas fa-check-circle text-green-500"></i>
+                                    Completed
+                                </h3>
+                                <span class="badge badge-completed">${completedTasks.length}</span>
+                            </div>
+                            <div class="space-y-3">
+                                ${completedTasks.map(task => renderKanbanCard(task)).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function renderKanbanCard(task) {
+            return `
+                <div class="kanban-card priority-${task.priority || 'medium'}">
+                    <div class="flex items-start justify-between mb-2">
+                        <h4 class="font-semibold text-gray-800 flex-1">${task.title}</h4>
+                        ${task.priority ? `<span class="text-xs badge bg-${task.priority === 'high' ? 'red' : task.priority === 'medium' ? 'yellow' : 'green'}-100 text-${task.priority === 'high' ? 'red' : task.priority === 'medium' ? 'yellow' : 'green'}-800">${task.priority}</span>` : ''}
+                    </div>
+                    <p class="text-sm text-gray-600 mb-3">${task.description || ''}</p>
+                    
+                    ${task.assigned_to_profile ? `
+                        <div class="flex items-center gap-2 text-xs text-gray-500 mb-2">
+                            <i class="fas fa-user"></i>
+                            <span>${task.assigned_to_profile.name}</span>
+                        </div>
+                    ` : ''}
+                    
+                    ${task.due_date ? `
+                        <div class="flex items-center gap-2 text-xs text-gray-500 mb-3">
+                            <i class="fas fa-calendar"></i>
+                            <span>${formatDate(task.due_date)}</span>
+                        </div>
+                    ` : ''}
+                    
+                    <div class="flex gap-2">
+                        ${task.assigned_to === state.user.id || state.profile.role === 'manager' ? `
+                            <button onclick="openTaskStatusModal('${task.id}')" class="btn btn-secondary text-xs flex-1">
+                                Update
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+        
+        function renderEmployees(content) {
+            content.innerHTML = `
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800 mb-6">
+                        <i class="fas fa-users text-cyan-600 mr-2"></i>Employees
+                    </h1>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        ${state.employees.map(employee => {
+                            const employeeTasks = state.tasks.filter(t => t.assigned_to === employee.id);
+                            const completed = employeeTasks.filter(t => t.status === 'completed').length;
+                            const total = employeeTasks.length;
+                            const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+                            
+                            return `
+                                <div class="card">
+                                    <div class="flex items-center gap-4 mb-4">
+                                        <div class="w-16 h-16 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                                            ${employee.name.charAt(0)}
+                                        </div>
+                                        <div>
+                                            <h3 class="font-bold text-gray-800">${employee.name}</h3>
+                                            <p class="text-sm text-gray-500">${employee.email}</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="space-y-3 mb-4">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-sm text-gray-600">Total Tasks</span>
+                                            <span class="font-bold text-cyan-600">${total}</span>
+                                        </div>
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-sm text-gray-600">Completed</span>
+                                            <span class="font-bold text-green-600">${completed}</span>
+                                        </div>
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-sm text-gray-600">Completion Rate</span>
+                                            <span class="font-bold text-blue-600">${completionRate}%</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex gap-2">
+                                        <button onclick="openAssignTaskModal('${employee.id}')" class="btn btn-primary text-sm flex-1">
+                                            <i class="fas fa-plus mr-2"></i>Assign Task
+                                        </button>
+                                        <button onclick="openChatWithEmployee('${employee.id}')" class="btn btn-secondary text-sm">
+                                            <i class="fas fa-comment"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        }
+        
+        async function renderChat(content) {
+            let chatPartners = [];
+            
+            if (state.profile.role === 'manager') {
+                chatPartners = state.employees;
+            } else {
+                // Employee - get managers
+                const { data } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('role', 'manager');
+                chatPartners = data || [];
+            }
+            
+            content.innerHTML = `
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800 mb-6">
+                        <i class="fas fa-comments text-cyan-600 mr-2"></i>Messages
+                    </h1>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Chat List -->
+                        <div class="card">
+                            <h3 class="font-bold text-gray-800 mb-4">Conversations</h3>
+                            <div class="space-y-2" id="chat-list">
+                                ${chatPartners.map(partner => `
+                                    <div onclick="openChatWithEmployee('${partner.id}')" class="p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-all border border-transparent hover:border-cyan-200 ${state.selectedEmployee?.id === partner.id ? 'bg-cyan-50 border-cyan-300' : ''}">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-10 h-10 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+                                                ${partner.name.charAt(0)}
+                                            </div>
+                                            <div>
+                                                <p class="font-medium text-gray-800">${partner.name}</p>
+                                                <p class="text-xs text-gray-500">${partner.role}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        
+                        <!-- Chat Window -->
+                        <div class="card md:col-span-2">
+                            <div id="chat-window">
+                                ${state.selectedEmployee ? renderChatWindow() : `
+                                    <div class="flex flex-col items-center justify-center h-96 text-gray-400">
+                                        <i class="fas fa-comment-dots text-6xl mb-4"></i>
+                                        <p>Select a conversation to start messaging</p>
+                                    </div>
+                                `}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function renderChatWindow() {
+            return `
+                <div class="flex flex-col h-[600px]">
+                    <!-- Chat Header -->
+                    <div class="border-b border-gray-200 pb-4 mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                                ${state.selectedEmployee.name.charAt(0)}
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-gray-800">${state.selectedEmployee.name}</h3>
+                                <p class="text-sm text-gray-500">${state.selectedEmployee.email}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Messages -->
+                    <div id="messages-container" class="flex-1 overflow-y-auto mb-4 space-y-2">
+                        ${state.messages.map(msg => `
+                            <div class="chat-message ${msg.sender_id === state.user.id ? 'sent' : 'received'}">
+                                <p>${msg.message}</p>
+                                <p class="text-xs mt-1 opacity-70">${formatDateTime(msg.created_at)}</p>
+                            </div>
+                        `).join('')}
+                        
+                        ${state.messages.length === 0 ? `
+                            <div class="text-center text-gray-400 py-8">
+                                <p>No messages yet. Start the conversation!</p>
+                            </div>
+                        ` : ''}
+                    </div>
+                    
+                    <!-- Message Input -->
+                    <form onsubmit="handleSendMessage(event)" class="flex gap-2">
+                        <input type="text" id="message-input" class="input-field flex-1" placeholder="Type a message..." required>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </form>
+                </div>
+            `;
+        }
+        
+        async function openChatWithEmployee(employeeId) {
+            const employee = state.profile.role === 'manager' 
+                ? state.employees.find(e => e.id === employeeId)
+                : (await supabaseClient.from('profiles').select('*').eq('id', employeeId).single()).data;
+            
+            state.selectedEmployee = employee;
+            await loadMessages(employeeId);
+            
+            state.currentView = 'chat';
+            renderContent();
+            
+            // Scroll to bottom
+            setTimeout(() => {
+                const container = document.getElementById('messages-container');
+                if (container) container.scrollTop = container.scrollHeight;
+            }, 100);
+        }
+        
+        function handleSendMessage(e) {
+            e.preventDefault();
+            const input = document.getElementById('message-input');
+            const message = input.value.trim();
+            
+            if (message && state.selectedEmployee) {
+                sendMessage(state.selectedEmployee.id, message);
+                input.value = '';
+            }
+        }
+        
+        function renderReports(content) {
+            const stats = getTaskStats();
+            const weeklyTasks = getWeeklyStats();
+            const monthlyTasks = getMonthlyStats();
+            
+            content.innerHTML = `
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800 mb-6">
+                        <i class="fas fa-chart-bar text-cyan-600 mr-2"></i>Reports & Analytics
+                    </h1>
+                    
+                    <!-- Summary Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div class="card">
+                            <h3 class="text-lg font-bold text-gray-700 mb-4">This Week</h3>
+                            <div class="space-y-3">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Tasks Created</span>
+                                    <span class="font-bold text-cyan-600">${weeklyTasks.length}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Completed</span>
+                                    <span class="font-bold text-green-600">${weeklyTasks.filter(t => t.status === 'completed').length}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">In Progress</span>
+                                    <span class="font-bold text-blue-600">${weeklyTasks.filter(t => t.status === 'in_progress').length}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card">
+                            <h3 class="text-lg font-bold text-gray-700 mb-4">This Month</h3>
+                            <div class="space-y-3">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Tasks Created</span>
+                                    <span class="font-bold text-cyan-600">${monthlyTasks.length}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Completed</span>
+                                    <span class="font-bold text-green-600">${monthlyTasks.filter(t => t.status === 'completed').length}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Completion Rate</span>
+                                    <span class="font-bold text-blue-600">${monthlyTasks.length > 0 ? Math.round((monthlyTasks.filter(t => t.status === 'completed').length / monthlyTasks.length) * 100) : 0}%</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card">
+                            <h3 class="text-lg font-bold text-gray-700 mb-4">All Time</h3>
+                            <div class="space-y-3">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Total Tasks</span>
+                                    <span class="font-bold text-cyan-600">${stats.total}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Completed</span>
+                                    <span class="font-bold text-green-600">${stats.completed}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Pending</span>
+                                    <span class="font-bold text-yellow-600">${stats.pending}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Charts -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="card">
+                            <h3 class="text-xl font-bold text-gray-800 mb-4">Task Status Distribution</h3>
+                            <canvas id="statusChart"></canvas>
+                        </div>
+                        
+                        <div class="card">
+                            <h3 class="text-xl font-bold text-gray-800 mb-4">Priority Breakdown</h3>
+                            <canvas id="priorityChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Render charts
+            setTimeout(() => {
+                renderCharts(stats);
+            }, 100);
+        }
+        
+        function renderCharts(stats) {
+            // Status Chart
+            const statusCtx = document.getElementById('statusChart');
+            if (statusCtx) {
+                new Chart(statusCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Pending', 'In Progress', 'Completed'],
+                        datasets: [{
+                            data: [stats.pending, stats.inProgress, stats.completed],
+                            backgroundColor: ['#fbbf24', '#3b82f6', '#10b981'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Priority Chart
+            const priorityCtx = document.getElementById('priorityChart');
+            if (priorityCtx) {
+                const highPriority = state.tasks.filter(t => t.priority === 'high').length;
+                const mediumPriority = state.tasks.filter(t => t.priority === 'medium').length;
+                const lowPriority = state.tasks.filter(t => t.priority === 'low').length;
+                
+                new Chart(priorityCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['High', 'Medium', 'Low'],
+                        datasets: [{
+                            label: 'Tasks',
+                            data: [highPriority, mediumPriority, lowPriority],
+                            backgroundColor: ['#ef4444', '#fbbf24', '#10b981']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+        
+        // ================================================
+        // MODAL FUNCTIONS
+        // ================================================
+        function openCreateTaskModal() {
+            const isManager = state.profile.role === 'manager';
+            
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.innerHTML = `
+                <div class="modal-content p-8">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">Create New Task</h2>
+                        <button onclick="this.closest('.modal').remove()" class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-times text-2xl"></i>
+                        </button>
+                    </div>
+                    
+                    <form onsubmit="handleCreateTask(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Title *</label>
+                            <input type="text" id="task-title" required class="input-field" placeholder="Task title">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                            <textarea id="task-description" class="input-field" rows="3" placeholder="Task description"></textarea>
+                        </div>
+                        
+                        ${isManager ? `
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Assign To *</label>
+                            <select id="task-assigned-to" required class="input-field">
+                                <option value="">Select Employee</option>
+                                ${state.employees.map(emp => `<option value="${emp.id}">${emp.name}</option>`).join('')}
+                            </select>
+                        </div>
+                        ` : ''}
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Priority</label>
+                            <select id="task-priority" class="input-field">
+                                <option value="low">Low</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="high">High</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Due Date</label>
+                            <input type="date" id="task-due-date" class="input-field">
+                        </div>
+                        
+                        <div class="flex gap-3 pt-4">
+                            <button type="submit" class="btn btn-primary flex-1">
+                                <i class="fas fa-plus mr-2"></i>Create Task
+                            </button>
+                            <button type="button" onclick="this.closest('.modal').remove()" class="btn btn-secondary">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+        
+        function handleCreateTask(e) {
+            e.preventDefault();
+            
+            const title = document.getElementById('task-title').value;
+            const description = document.getElementById('task-description').value;
+            const assignedToField = document.getElementById('task-assigned-to');
+            const priority = document.getElementById('task-priority').value;
+            const dueDate = document.getElementById('task-due-date').value;
+            
+            const taskData = {
+                title,
+                description,
+                assigned_to: assignedToField ? assignedToField.value : state.user.id,
+                priority,
+                due_date: dueDate || null,
+                status: 'pending',
+                is_personal: !assignedToField
+            };
+            
+            createTask(taskData);
+            document.querySelector('.modal').remove();
+        }
+        
+        function openAssignTaskModal(employeeId) {
+            const employee = state.employees.find(e => e.id === employeeId);
+            
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.innerHTML = `
+                <div class="modal-content p-8">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">Assign Task to ${employee.name}</h2>
+                        <button onclick="this.closest('.modal').remove()" class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-times text-2xl"></i>
+                        </button>
+                    </div>
+                    
+                    <form onsubmit="handleAssignTask(event, '${employeeId}')" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Title *</label>
+                            <input type="text" id="assign-task-title" required class="input-field" placeholder="Task title">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                            <textarea id="assign-task-description" class="input-field" rows="3" placeholder="Task description"></textarea>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Priority</label>
+                            <select id="assign-task-priority" class="input-field">
+                                <option value="low">Low</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="high">High</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Due Date</label>
+                            <input type="date" id="assign-task-due-date" class="input-field">
+                        </div>
+                        
+                        <div class="flex gap-3 pt-4">
+                            <button type="submit" class="btn btn-primary flex-1">
+                                <i class="fas fa-paper-plane mr-2"></i>Assign Task
+                            </button>
+                            <button type="button" onclick="this.closest('.modal').remove()" class="btn btn-secondary">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+        
+        function handleAssignTask(e, employeeId) {
+            e.preventDefault();
+            
+            const taskData = {
+                title: document.getElementById('assign-task-title').value,
+                description: document.getElementById('assign-task-description').value,
+                assigned_to: employeeId,
+                priority: document.getElementById('assign-task-priority').value,
+                due_date: document.getElementById('assign-task-due-date').value || null,
+                status: 'pending',
+                is_personal: false
+            };
+            
+            createTask(taskData);
+            document.querySelector('.modal').remove();
+        }
+        
+        function openTaskStatusModal(taskId) {
+            const task = state.tasks.find(t => t.id === taskId);
+            
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.innerHTML = `
+                <div class="modal-content p-8">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">Update Task Status</h2>
+                        <button onclick="this.closest('.modal').remove()" class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-times text-2xl"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h3 class="font-bold text-lg text-gray-800">${task.title}</h3>
+                        <p class="text-gray-600">${task.description || ''}</p>
+                    </div>
+                    
+                    <form onsubmit="handleUpdateTaskStatus(event, '${taskId}')" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                            <select id="update-task-status" class="input-field">
+                                <option value="pending" ${task.status === 'pending' ? 'selected' : ''}>Pending</option>
+                                <option value="in_progress" ${task.status === 'in_progress' ? 'selected' : ''}>In Progress</option>
+                                <option value="completed" ${task.status === 'completed' ? 'selected' : ''}>Completed</option>
+                            </select>
+                        </div>
+                        
+                        <div class="flex gap-3 pt-4">
+                            <button type="submit" class="btn btn-primary flex-1">
+                                <i class="fas fa-save mr-2"></i>Update Status
+                            </button>
+                            <button type="button" onclick="this.closest('.modal').remove()" class="btn btn-secondary">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+        
+        function handleUpdateTaskStatus(e, taskId) {
+            e.preventDefault();
+            
+            const status = document.getElementById('update-task-status').value;
+            updateTask(taskId, { status });
+            document.querySelector('.modal').remove();
+        }
+        
+        function openEditTaskModal(taskId) {
+            const task = state.tasks.find(t => t.id === taskId);
+            
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.innerHTML = `
+                <div class="modal-content p-8">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">Edit Task</h2>
+                        <button onclick="this.closest('.modal').remove()" class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-times text-2xl"></i>
+                        </button>
+                    </div>
+                    
+                    <form onsubmit="handleEditTask(event, '${taskId}')" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Title</label>
+                            <input type="text" id="edit-task-title" value="${task.title}" required class="input-field">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                            <textarea id="edit-task-description" class="input-field" rows="3">${task.description || ''}</textarea>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                            <select id="edit-task-status" class="input-field">
+                                <option value="pending" ${task.status === 'pending' ? 'selected' : ''}>Pending</option>
+                                <option value="in_progress" ${task.status === 'in_progress' ? 'selected' : ''}>In Progress</option>
+                                <option value="completed" ${task.status === 'completed' ? 'selected' : ''}>Completed</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Priority</label>
+                            <select id="edit-task-priority" class="input-field">
+                                <option value="low" ${task.priority === 'low' ? 'selected' : ''}>Low</option>
+                                <option value="medium" ${task.priority === 'medium' ? 'selected' : ''}>Medium</option>
+                                <option value="high" ${task.priority === 'high' ? 'selected' : ''}>High</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Due Date</label>
+                            <input type="date" id="edit-task-due-date" value="${task.due_date || ''}" class="input-field">
+                        </div>
+                        
+                        <div class="flex gap-3 pt-4">
+                            <button type="submit" class="btn btn-primary flex-1">
+                                <i class="fas fa-save mr-2"></i>Save Changes
+                            </button>
+                            <button type="button" onclick="this.closest('.modal').remove()" class="btn btn-secondary">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+        
+        function handleEditTask(e, taskId) {
+            e.preventDefault();
+            
+            const updates = {
+                title: document.getElementById('edit-task-title').value,
+                description: document.getElementById('edit-task-description').value,
+                status: document.getElementById('edit-task-status').value,
+                priority: document.getElementById('edit-task-priority').value,
+                due_date: document.getElementById('edit-task-due-date').value || null
+            };
+            
+            updateTask(taskId, updates);
+            document.querySelector('.modal').remove();
+        }
+        
+        function openUploadModal(taskId) {
+            const task = state.tasks.find(t => t.id === taskId);
+            
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.innerHTML = `
+                <div class="modal-content p-8">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">Upload Proof</h2>
+                        <button onclick="this.closest('.modal').remove()" class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-times text-2xl"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h3 class="font-bold text-lg text-gray-800">${task.title}</h3>
+                    </div>
+                    
+                    <form onsubmit="handleUploadFile(event, '${taskId}')" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Select File</label>
+                            <input type="file" id="upload-file" required class="input-field" accept="image/*,.pdf,.doc,.docx">
+                            <p class="text-xs text-gray-500 mt-1">Supported: Images, PDF, Word documents</p>
+                        </div>
+                        
+                        <div class="flex gap-3 pt-4">
+                            <button type="submit" class="btn btn-primary flex-1">
+                                <i class="fas fa-upload mr-2"></i>Upload
+                            </button>
+                            <button type="button" onclick="this.closest('.modal').remove()" class="btn btn-secondary">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+        
+        async function handleUploadFile(e, taskId) {
+            e.preventDefault();
+            
+            const fileInput = document.getElementById('upload-file');
+            const file = fileInput.files[0];
+            
+            if (file) {
+                await uploadFile(file, taskId);
+                document.querySelector('.modal').remove();
+            }
+        }
+        
+        // ================================================
+        // INITIALIZATION
+        // ================================================
+        checkAuth();
+    </script>
+</body>
+</html>
